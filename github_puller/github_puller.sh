@@ -25,8 +25,8 @@ fi
 PULL_ATTEMPTS=${PULL_ATTEMPTS:-3}
 
 # Function to clone the repository if not already present
-clone_repository() {  
-  if [ ! -d "$GITPULLER_REPO_PATH/.git" ]; then
+clone_repository() {
+    if [ ! -d "$GITPULLER_REPO_PATH/.git" ]; then
     echo "Directory $GITPULLER_REPO_PATH does not exist or is not a Git repository. Cloning the repository..."
     git clone "$GITPULLER_REPO_URL" "$GITPULLER_REPO_PATH"
     

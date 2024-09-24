@@ -1,0 +1,78 @@
+trigger:
+  branches:
+    include:
+      - master  # Trigger after merge to master
+
+pr:
+  branches:
+    include:
+      - '*'  # Trigger on PR
+
+
+variables:
+  DOCKERHUB_USERNAME: 'rmikl'
+
+jobs:
+  - job: BuildImages
+    displayName: 'Build Docker images dynamically'
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+      - checkout: self
+        fetchDepth: 0  # Fetch full history to compare with master
+
+      # Use DockerHub Service Connection to login
+      - task: Docker@2
+        displayName: 'Login to DockerHub'
+        inputs:
+          command: login
+          containerRegistry: 'dockerhub'  # Use the name of your DockerHub service connection
+
+      - script: |
+          echo "Fetching changes between PR and master branch..."
+          git fetch origin master
+
+          # Find all directories containing Dockerfile
+          DOCKER_DIRS=$(find . -type f -name 'Dockerfile' | xargs -n1 dirname)
+
+          # Compare with master to find changed directories
+          if [ "$BUILD_SOURCEBRANCHNAME" != "master" ]; then
+            CHANGED_DIRS=$(git diff --name-only origin/master HEAD | cut -d'/' -f1 | sort -u)
+          else
+            # On master, consider all Dockerfile directories
+            CHANGED_DIRS=$DOCKER_DIRS
+          fi
+
+          # Identify directories to build
+          BUILD_DIRS=""
+          for dir in $DOCKER_DIRS; do
+            if echo "$CHANGED_DIRS" | grep -q "$(basename $dir)"; then
+              BUILD_DIRS="$BUILD_DIRS $dir"
+            fi
+          done
+
+          echo "Directories to build or tag: $BUILD_DIRS"
+
+          # Loop over directories and build/push images
+          for dir in $BUILD_DIRS; do
+            IMAGE_NAME="$DOCKERHUB_USERNAME/$(basename $dir)"
+            if [ "$BUILD_SOURCEBRANCHNAME" == "master" ]; then
+              # On master, tag the image with 1.0.<BuildId>
+              VERSION_PREFIX="1.0"
+              ITERATOR=$BUILD_BUILDID
+              NEW_TAG="$VERSION_PREFIX.$ITERATOR"
+
+              echo "Building and pushing Docker image for $dir with tag: $NEW_TAG"
+              docker build -t $IMAGE_NAME:$NEW_TAG $dir
+              docker push $IMAGE_NAME:$NEW_TAG
+            else
+              # During PR, build and push the image with the commit hash as the tag
+              COMMIT_TAG=$BUILD_SOURCEVERSION
+              echo "Building and pushing Docker image for $dir with tag: $COMMIT_TAG"
+              docker build -t $IMAGE_NAME:$COMMIT_TAG $dir
+              docker push $IMAGE_NAME:$COMMIT_TAG
+            fi
+          done
+        displayName: 'Build and push Docker images'
+        env:
+          DOCKERHUB_USERNAME: $(DOCKERHUB_USERNAME)

@@ -13,8 +13,8 @@ RUN curl -sSL -o /usr/local/bin/argocd-autopilot "https://github.com/argoproj-la
  && chmod +x /usr/local/bin/argocd-autopilot
 
 # Copy entrypoint script
-COPY entrypoint.sh /entrypoint.sh
+#COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
 # Set the entrypoint to the autopilot script
-ENTRYPOINT ["/entrypoint.sh"]
+#ENTRYPOINT ["/entrypoint.sh"]

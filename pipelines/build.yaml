@@ -50,7 +50,7 @@ jobs:
 
           # Loop over directories and build/push images
           for dir in $BUILD_DIRS; do
-            IMAGE_NAME="$(DOCKERHUB_USERNAME)/$(basename $dir)"
+            IMAGE_NAME=rmikl/$(basename $dir)"
             if [ "$(Build.SourceBranchName)" == "master" ]; then
               # On master, tag the image with 1.0.<BuildId>
               VERSION_PREFIX="1.0"
@@ -69,5 +69,3 @@ jobs:
             fi
           done
         displayName: 'Build and push Docker images'
-        env:
-          DOCKERHUB_USERNAME: rmikl

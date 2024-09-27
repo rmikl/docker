@@ -1,10 +1,7 @@
-# Use Ubuntu 24.04 as the base image
 FROM ubuntu:24.04
 
-# Set environment variable to suppress interactive prompts during package installation
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Install necessary packages
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
         ca-certificates \
@@ -13,7 +10,6 @@ RUN apt-get update && \
         lsb-release && \
     rm -rf /var/lib/apt/lists/*
 
-# Define kubectl version
 ENV KUBECTL_VERSION=v1.30.3
 
 # Download and install kubectl
@@ -23,11 +19,4 @@ RUN curl -LO "https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/amd64/kubec
     install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl && \
     rm kubectl kubectl.sha256
 
-# (Optional) Verify kubectl installation
-RUN kubectl version --client
-
-# (Optional) Set the entrypoint to kubectl
-# ENTRYPOINT ["kubectl"]
-
-# (Optional) Define default command
-# CMD ["version", "--client"]
+COPY update_metallb_address_pool.sh /update_metallb_address_pool.sh

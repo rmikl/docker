@@ -6,9 +6,6 @@
 #              the specified MetalLB IPAddressPool resource in Kubernetes.
 # ============================================
 
-# Exit immediately if a command exits with a non-zero status
-set -e
-
 # Function to display usage
 usage() {
   echo "Usage: INTERVAL_TIME=<seconds> POOL_NAME=<pool-name> POOL_NAMESPACE=<namespace> ./update_metallb_ip_pool.sh"
@@ -25,7 +22,7 @@ fi
 # Function to get the current external IP
 get_external_ip() {
   # Using ipify as the external IP service
-  curl -s https://api.ipify.org
+  curl -s https://api.ipify.org || true
 }
 
 # Function to get the current IP from the IPAddressPool

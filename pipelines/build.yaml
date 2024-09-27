@@ -65,12 +65,14 @@ jobs:
               echo "Building and pushing Docker image for $dir with tag: $NEW_TAG"
               docker build -t $IMAGE_NAME:$NEW_TAG $dir
               docker push $IMAGE_NAME:$NEW_TAG
+              echo "PUSHED IMAGE: $IMAGE_NAME:$NEW_TAG"
             else
               # During PR, build and push the image with the commit hash as the tag
               COMMIT_TAG=$BUILD_SOURCEVERSION
               echo "Building and pushing Docker image for $dir with tag: $COMMIT_TAG"
               docker build -t $IMAGE_NAME:$COMMIT_TAG $dir
               docker push $IMAGE_NAME:$COMMIT_TAG
+              echo "PUSHED IMAGE: $IMAGE_NAME:$NEW_TAG"
             fi
           done
         displayName: 'Build and push Docker images'

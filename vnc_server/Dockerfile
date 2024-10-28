@@ -10,8 +10,8 @@ RUN apt-get update && apt-get install -y \
     gnupg2 \
     lsb-release \
     git \
-    xfce4 \
-    xfce4-goodies \
+    gnome-session \
+    gnome-terminal \
     tightvncserver \
     xauth \
     dbus-x11
@@ -34,7 +34,7 @@ ENV DISPLAY=:1
 
 # Create the .vnc directory and set up the VNC xstartup script
 RUN mkdir /root/.vnc && \
-    echo "#!/bin/sh\nstartxfce4 &" > /root/.vnc/xstartup && \
+    echo "#!/bin/sh\nunset SESSION_MANAGER\nunset DBUS_SESSION_BUS_ADDRESS\ngnome-session &" > /root/.vnc/xstartup && \
     chmod +x /root/.vnc/xstartup
 
 # Expose the VNC port

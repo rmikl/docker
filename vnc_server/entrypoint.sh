@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Exit immediately if a command exits with a non-zero status
-set -e
+set -xve
 
 # Set default password if not provided
 VNC_PASSWORD=${VNC_PASSWORD:-password}
@@ -16,4 +16,4 @@ touch /root/.Xauthority
 chmod 600 /root/.Xauthority
 
 # Start the VNC server
-exec "$@"
+vncserver :1 -geometry 1280x800 -depth 24 -httpport 5901

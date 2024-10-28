@@ -13,7 +13,8 @@ RUN apt-get update && apt-get install -y \
     xfce4 \
     xfce4-goodies \
     tightvncserver \
-    xauth
+    xauth \
+    dbus-x11
 
 # Install Visual Studio Code
 RUN wget -qO- https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > microsoft.gpg && \
@@ -47,4 +48,4 @@ RUN chmod +x /entrypoint.sh
 ENTRYPOINT ["/entrypoint.sh"]
 
 # Default command to start the VNC server
-CMD ["tightvncserver", ":1", "-geometry", "1280x800", "-depth", "24"]
+#CMD ["tightvncserver", ":1", "-geometry", "1280x800", "-depth", "24"]

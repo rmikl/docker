@@ -12,7 +12,8 @@ RUN apt-get update && apt-get install -y \
     git \
     xfce4 \
     xfce4-goodies \
-    tightvncserver
+    tightvncserver \
+    xauth
 
 # Install Visual Studio Code
 RUN wget -qO- https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > microsoft.gpg && \
@@ -22,11 +23,12 @@ RUN wget -qO- https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor 
     apt-get update && apt-get install -y code
 
 # Install kubectl
+ENV USER=root
+
 RUN curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl" && \
     install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl 
-    
+
 # Set environment variables
-ENV USER=root
 ENV DISPLAY=:1
 
 # Create the .vnc directory and set up the VNC xstartup script

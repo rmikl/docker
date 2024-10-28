@@ -14,7 +14,10 @@ RUN apt-get update && apt-get install -y \
     gnome-terminal \
     tightvncserver \
     xauth \
-    dbus-x11
+    dbus-x11 \
+    xfonts-base \
+    xfonts-75dpi \
+    xfonts-100dpi
 
 # Install Visual Studio Code
 RUN wget -qO- https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > microsoft.gpg && \
@@ -34,7 +37,7 @@ ENV DISPLAY=:1
 
 # Create the .vnc directory and set up the VNC xstartup script
 RUN mkdir /root/.vnc && \
-    echo "#!/bin/sh\nunset SESSION_MANAGER\nunset DBUS_SESSION_BUS_ADDRESS\ngnome-session &" > /root/.vnc/xstartup && \
+    echo "#!/bin/sh\nunset SESSION_MANAGER\nunset DBUS_SESSION_BUS_ADDRESS\nexec gnome-session &" > /root/.vnc/xstartup && \
     chmod +x /root/.vnc/xstartup
 
 # Expose the VNC port
@@ -48,4 +51,4 @@ RUN chmod +x /entrypoint.sh
 ENTRYPOINT ["/entrypoint.sh"]
 
 # Default command to start the VNC server
-#CMD ["tightvncserver", ":1", "-geometry", "1280x800", "-depth", "24"]
+# CMD ["tightvncserver", ":1", "-geometry", "1280x800", "-depth", "24", "-fp", "/usr/share/fonts/X11/misc"]

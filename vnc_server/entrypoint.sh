@@ -17,3 +17,4 @@ chmod 600 /root/.Xauthority
 
 # Start the VNC server with specified depth and geometry
 vncserver :1 -depth 32 -httpport 5901
+tail -f /root/.vnc/*.log

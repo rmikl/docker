@@ -15,7 +15,8 @@ chmod 600 /root/.vnc/passwd
 touch /root/.Xauthority
 chmod 600 /root/.Xauthority
 
-# Start the VNC server with specified depth and geometry
-vncserver :1 -depth 32  -fp /usr/share/fonts/X11/misc  -httpport 5901
+# Start the VNC server with specified depth, geometry, and font path
+vncserver :1 -depth 32 -geometry 1280x800 -fp "/usr/share/fonts/X11/Type1,/usr/share/fonts/X11/75dpi,/usr/share/fonts/X11/100dpi" -httpport 5901
 
+# Keep container running by tailing VNC log
 tail -f /root/.vnc/*.log

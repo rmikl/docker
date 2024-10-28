@@ -17,7 +17,9 @@ RUN apt-get update && apt-get install -y \
     dbus-x11 \
     xfonts-base \
     xfonts-75dpi \
-    xfonts-100dpi
+    xfonts-100dpi \
+    fonts-dejavu-core \
+    libgtk-3-0
 
 # Install Visual Studio Code
 RUN wget -qO- https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > microsoft.gpg && \
@@ -49,6 +51,3 @@ RUN chmod +x /entrypoint.sh
 
 # Set the entrypoint
 ENTRYPOINT ["/entrypoint.sh"]
-
-# Default command to start the VNC server
-# CMD ["tightvncserver", ":1", "-geometry", "1280x800", "-depth", "24", "-fp", "/usr/share/fonts/X11/misc"]

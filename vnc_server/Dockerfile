@@ -11,16 +11,17 @@ FROM elestio/docker-desktop-vnc:latest
 #    sudo apt update && \
 #    sudo apt install code # or code-insider
 #
-RUN apt install software-properties-common apt-transport-https wget -y && \
-    wget -q https://packages.microsoft.com/keys/microsoft.asc -O- | sudo apt-key add - && \
+
+# Install brew
+RUN apt-get update && \
+    apt-get install build-essential wget software-properties-common apt-transport-https curl file git ruby-full locales --no-install-recommends -y && \
+    rm -rf /var/lib/apt/lists/*
+RUN wget -q https://packages.microsoft.com/keys/microsoft.asc -O- | sudo apt-key add - && \
     add-apt-repository "deb [arch=amd64] https://packages.microsoft.com/repos/vscode stable main" && \
     apt update && \
     apt install code -y
 
-# Install brew
-RUN apt-get update && \
-    apt-get install build-essential curl file git ruby-full locales --no-install-recommends -y && \
-    rm -rf /var/lib/apt/lists/*
+
 
 RUN localedef -i en_US -f UTF-8 en_US.UTF-8
 RUN useradd -m -s /bin/bash linuxbrew && \

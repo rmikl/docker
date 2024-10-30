@@ -2,7 +2,7 @@
 FROM elestio/docker-desktop-vnc:latest
 
 # Install visual studio code
-RUN apt-get update && apt-get install -y curl && \
+RUN apt-get update && apt-get install -y curl git && \
     curl -fsSL https://code-server.dev/install.sh | sh
 
 # Install zsh and oh-my-zsh

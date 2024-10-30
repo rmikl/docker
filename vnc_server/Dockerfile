@@ -34,6 +34,13 @@ USER linuxbrew
 RUN /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 ENV PATH="/home/linuxbrew/.linuxbrew/bin:${PATH}"
 
+# Install kubectl
+RUN brew install kubectl
+
+#Install zsh and oh-my-zsh
+RUN brew install zsh 
+   # sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+
 USER root
 
 #ENV USER=linuxbrew

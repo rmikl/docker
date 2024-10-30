@@ -11,10 +11,11 @@ FROM elestio/docker-desktop-vnc:latest
 #    sudo apt update && \
 #    sudo apt install code # or code-insider
 #
-
-# Install snap
-RUN  apt update && \
-     apt install snapd -y
+RUN apt install software-properties-common apt-transport-https wget -y && \
+    wget -q https://packages.microsoft.com/keys/microsoft.asc -O- | sudo apt-key add - && \
+    add-apt-repository "deb [arch=amd64] https://packages.microsoft.com/repos/vscode stable main" && \
+    apt update && \
+    apt install code -y
 
 # Install brew
 RUN apt-get update && \
@@ -34,7 +35,7 @@ ENV PATH="/home/linuxbrew/.linuxbrew/bin:${PATH}"
 ENV USER=linuxbrew
 
 # Install Visual Studio Code
-RUN snap install --classic code
+
 
 #Install zsh and oh-my-zsh
 RUN brew install zsh && \

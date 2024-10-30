@@ -37,7 +37,7 @@ ENV USER=linuxbrew
 RUN brew install kubectl
 
 #Install zsh and oh-my-zsh
-RUN brew install zsh 
+RUN cd /home/linuxbrew && brew install zsh 
    # sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
 
 USER root

@@ -22,6 +22,9 @@ RUN localedef -i en_US -f UTF-8 en_US.UTF-8
 RUN useradd -m -s /bin/bash linuxbrew && \
     echo 'linuxbrew ALL=(ALL) NOPASSWD:ALL' >>/etc/sudoers
 
+RUN mkdir -p /home/ubuntu/.cache/Homebrew && \
+    chown -R linuxbrew: /home/ubuntu/.cache/Homebrew
+    
 USER linuxbrew
 RUN sudo /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 ENV PATH="/home/linuxbrew/.linuxbrew/bin:${PATH}"

@@ -12,6 +12,10 @@ FROM elestio/docker-desktop-vnc:latest
 #    sudo apt install code # or code-insider
 #
 
+# Install snap
+RUN  apt update && \
+     apt install snapd
+
 # Install brew
 RUN apt-get update && \
     apt-get install build-essential curl file git ruby-full locales --no-install-recommends -y && \
@@ -30,8 +34,7 @@ ENV PATH="/home/linuxbrew/.linuxbrew/bin:${PATH}"
 ENV USER=linuxbrew
 
 # Install Visual Studio Code
-
-RUN cd /home/linuxbrew && brew install --cask visual-studio-code
+RUN snap install --classic code
 
 #Install zsh and oh-my-zsh
 RUN brew install zsh && \

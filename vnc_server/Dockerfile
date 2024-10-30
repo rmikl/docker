@@ -14,7 +14,7 @@ FROM elestio/docker-desktop-vnc:latest
 
 # Install snap
 RUN  apt update && \
-     apt install snapd
+     apt install snapd -y
 
 # Install brew
 RUN apt-get update && \

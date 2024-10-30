@@ -1,4 +1,3 @@
-# Use the official Ubuntu base image
 FROM elestio/docker-desktop-vnc:latest
 
 # Install visual studio code
@@ -30,7 +29,7 @@ RUN /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/instal
 ENV PATH="/home/linuxbrew/.linuxbrew/bin:${PATH}"
 
 # Install Visual Studio Code
-RUN brew install --cask visual-studio-code
+RUN brew install visual-studio-code
 
 #Install zsh and oh-my-zsh
 RUN brew install zsh && \

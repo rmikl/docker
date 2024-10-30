@@ -34,10 +34,11 @@ ENV PATH="/home/linuxbrew/.linuxbrew/bin:${PATH}"
 
 ENV USER=linuxbrew
 # Install kubectl
+WORKDIR /home/linuxbrew
 RUN brew install kubectl
 
 #Install zsh and oh-my-zsh
-RUN cd /home/linuxbrew && brew install zsh 
+RUN brew install zsh 
    # sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
 
 USER root

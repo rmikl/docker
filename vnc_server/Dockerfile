@@ -13,15 +13,19 @@ FROM elestio/docker-desktop-vnc:latest
 #    sudo apt install code # or code-insider
 #
 
+# Install brew
+RUN apt-get update && \
+    apt-get install build-essential curl file git ruby-full locales --no-install-recommends -y && \
+    rm -rf /var/lib/apt/lists/*
 
-#add user rmikl
-RUN useradd -ms /bin/bash rmikl
+RUN localedef -i en_US -f UTF-8 en_US.UTF-8
+RUN useradd -m -s /bin/bash linuxbrew && \
+    echo 'linuxbrew ALL=(ALL) NOPASSWD:ALL' >>/etc/sudoers
 
+USER linuxbrew
+RUN sh -c "$(curl -fsSL https://raw.githubusercontent.com/Linuxbrew/install/master/install.sh)"
+ENV PATH="/home/linuxbrew/.linuxbrew/bin:${PATH}"
 
-RUN /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-
-USER rmikl
- 
 # Install Visual Studio Code
 RUN brew install --cask visual-studio-code
 

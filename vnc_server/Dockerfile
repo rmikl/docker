@@ -31,7 +31,7 @@ ENV USER=linuxbrew
 
 # Install Visual Studio Code
 
-RUN pwd && brew install visual-studio-code
+RUN cd /home/linuxbrew && brew install visual-studio-code
 
 #Install zsh and oh-my-zsh
 RUN brew install zsh && \

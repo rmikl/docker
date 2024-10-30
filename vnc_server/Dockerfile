@@ -14,24 +14,22 @@ FROM elestio/docker-desktop-vnc:latest
 
 # Install brew
 RUN apt-get update && \
-    apt-get install build-essential curl file git ruby-full locales --no-install-recommends -y && \
-    rm -rf /var/lib/apt/lists/*
-
-RUN localedef -i en_US -f UTF-8 en_US.UTF-8
-RUN useradd -m -s /bin/bash linuxbrew && \
-    echo 'linuxbrew ALL=(ALL) NOPASSWD:ALL' >>/etc/sudoers
-
-RUN mkdir -p /home/ubuntu/.cache/Homebrew && \
-    chown -R linuxbrew: /home/ubuntu/.cache/Homebrew
-    
+    apt-get install -y -q --allow-unauthenticated \
+    git \
+    sudo
+RUN useradd -m -s /bin/zsh linuxbrew && \
+    usermod -aG sudo linuxbrew &&  \
+    mkdir -p /home/linuxbrew/.linuxbrew && \
+    chown -R linuxbrew: /home/linuxbrew/.linuxbrew
 USER linuxbrew
-RUN /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+RUN /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
+USER root
+RUN chown -R $CONTAINER_USER: /home/linuxbrew/.linuxbrew
 ENV PATH="/home/linuxbrew/.linuxbrew/bin:${PATH}"
-ENV USER=linuxbrew
-
-# Install Visual Studio Code
-
-RUN chmod 777 -R . && brew install visual-studio-code
+RUN git config --global --add safe.directory /home/linuxbrew/.linuxbrew/Homebrew
+USER linuxbrew
+RUN brew update
+RUN brew doctor brew install visual-studio-code
 
 #Install zsh and oh-my-zsh
 RUN brew install zsh && \

@@ -26,7 +26,7 @@ RUN mkdir -p /home/ubuntu/.cache/Homebrew && \
     chown -R linuxbrew: /home/ubuntu/.cache/Homebrew
     
 USER linuxbrew
-RUN sudo /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+RUN /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 ENV PATH="/home/linuxbrew/.linuxbrew/bin:${PATH}"
 
 # Install Visual Studio Code

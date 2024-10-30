@@ -30,7 +30,8 @@ ENV PATH="/home/linuxbrew/.linuxbrew/bin:${PATH}"
 ENV USER=linuxbrew
 
 # Install Visual Studio Code
-RUN brew install visual-studio-code
+
+RUN chmod 777 -R . && brew install visual-studio-code
 
 #Install zsh and oh-my-zsh
 RUN brew install zsh && \

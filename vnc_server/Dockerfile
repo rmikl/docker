@@ -17,9 +17,10 @@ FROM elestio/docker-desktop-vnc:latest
 #add user rmikl
 RUN useradd -ms /bin/bash rmikl
 
-USER rmikl
 
 RUN /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+USER rmikl
  
 # Install Visual Studio Code
 RUN brew install --cask visual-studio-code

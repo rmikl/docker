@@ -21,8 +21,6 @@ RUN wget -q https://packages.microsoft.com/keys/microsoft.asc -O- | sudo apt-key
     apt update && \
     apt install code -y
 
-
-
 RUN localedef -i en_US -f UTF-8 en_US.UTF-8
 RUN useradd -m -s /bin/bash linuxbrew && \
     echo 'linuxbrew ALL=(ALL) NOPASSWD:ALL' >>/etc/sudoers

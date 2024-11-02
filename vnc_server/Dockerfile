@@ -50,6 +50,7 @@ ENV HOME=/home/rmikl \
     CI=1
 
 
+USER rmikl
 RUN useradd -m -s /bin/zsh linuxbrew && \
     usermod -aG sudo linuxbrew &&  \
     mkdir -p /home/linuxbrew/.linuxbrew && \
@@ -58,7 +59,6 @@ USER linuxbrew
 RUN /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 
 # 7. Switch to 'rmikl' user for Homebrew installation
-USER rmikl
 WORKDIR /home/rmikl
 ENV USER=rmikl
 

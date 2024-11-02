@@ -60,8 +60,7 @@ RUN brew doctor
 # 7. Switch to 'rmikl' user for Homebrew installation
 WORKDIR /home/rmikl
 ENV USER=rmikl
-
-
+USER rmikl
 # 12. Install kubectl and helm using Homebrew
 RUN brew install kubectl helm && \
     brew cleanup

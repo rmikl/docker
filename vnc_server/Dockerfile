@@ -55,6 +55,7 @@ RUN useradd -m -s /bin/zsh linuxbrew && \
     mkdir -p /home/linuxbrew/.linuxbrew && \
     chown -R linuxbrew: /home/linuxbrew/.linuxbrew
 USER linuxbrew
+WORKDIR /home/linuxbrew
 RUN /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 
 USER rmikl

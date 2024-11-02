@@ -51,13 +51,12 @@ ENV HOME=/home/rmikl \
 
 # 7. Switch to 'rmikl' user for Homebrew installation
 USER rmikl
+WORKDIR /home/rmikl
 
-# 8. Install Homebrew for 'rmikl' with environment variables set inline
-RUN /bin/bash -c " \
-    echo 'Installing Homebrew...' && \
-    /bin/bash -c \"$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\" > /home/rmikl/brew_install.log 2>&1 && \
-    cat /home/rmikl/brew_install.log && \
-    echo 'eval \"$(/home/rmikl/.linuxbrew/bin/brew shellenv)\"' >> /home/rmikl/.bash_profile"
+# 8. Install Homebrew for 'rmikl' with proper quoting
+RUN /bin/bash -c 'echo "Installing Homebrew..." && \
+    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" && \
+    echo "eval \"$(/home/rmikl/.linuxbrew/bin/brew shellenv)\"" >> /home/rmikl/.bash_profile'
 
 # 9. Set environment variables for Homebrew
 ENV PATH="/home/rmikl/.linuxbrew/bin:/home/rmikl/.linuxbrew/sbin:${PATH}" \
@@ -68,14 +67,14 @@ ENV PATH="/home/rmikl/.linuxbrew/bin:/home/rmikl/.linuxbrew/sbin:${PATH}" \
 RUN ls -la /home/rmikl/.linuxbrew/bin
 
 # 11. Verify Homebrew installation
-RUN /home/rmikl/.linuxbrew/bin/brew --version
+RUN brew --version
 
 # 12. Install kubectl and helm using Homebrew
-RUN /home/rmikl/.linuxbrew/bin/brew install kubectl helm && \
-    /home/rmikl/.linuxbrew/bin/brew cleanup
+RUN brew install kubectl helm && \
+    brew cleanup
 
 # 13. Install Zsh via Homebrew
-RUN /home/rmikl/.linuxbrew/bin/brew install zsh
+RUN brew install zsh
 
 # 14. Install Oh-My-Zsh manually to avoid interactive prompts
 RUN git clone https://github.com/ohmyzsh/ohmyzsh.git /home/rmikl/.oh-my-zsh && \

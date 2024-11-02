@@ -52,19 +52,14 @@ ENV HOME=/home/rmikl \
 # 7. Switch to 'rmikl' user for Homebrew installation
 USER rmikl
 WORKDIR /home/rmikl
+ENV USER=rmikl
 
 # 8. Install Homebrew for 'rmikl' with proper quoting
-RUN /bin/bash -c 'echo "Installing Homebrew..." && \
-    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" && \
-    echo "eval \"$(/home/rmikl/.linuxbrew/bin/brew shellenv)\"" >> /home/rmikl/.bash_profile'
+RUN /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 
 # 9. Set environment variables for Homebrew
 ENV PATH="/home/rmikl/.linuxbrew/bin:/home/rmikl/.linuxbrew/sbin:${PATH}" \
-    HOMEBREW_NO_AUTO_UPDATE=1 \
-    USER=rmikl
-
-# 10. Verify Homebrew installation directory
-RUN ls -la /home/rmikl/.linuxbrew/bin
+    HOMEBREW_NO_AUTO_UPDATE=1 
 
 # 11. Verify Homebrew installation
 RUN brew --version

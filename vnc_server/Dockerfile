@@ -38,30 +38,24 @@ RUN apt update && \
 RUN useradd -m -s /bin/bash rmikl && \
     echo 'rmikl ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
 
-# 5. Set up Homebrew environment for 'rmikl'
-RUN mkdir -p /home/rmikl/.cache/Homebrew && \
-    chown -R rmikl:rmikl /home/rmikl/.cache/Homebrew
 
-# 6. Set environment variables for Homebrew and HOME before switching user
-ENV HOME=/home/rmikl \
-    HOMEBREW_PREFIX=/home/rmikl/.linuxbrew \
-    HOMEBREW_REPOSITORY=/home/rmikl/.linuxbrew/Homebrew \
-    HOMEBREW_CELLAR=/home/rmikl/.linuxbrew/Cellar \
-    CI=1
-
-
+RUN apt-get update && \
+    apt-get install -y -q --allow-unauthenticated \
+    git \
+    sudo
 RUN useradd -m -s /bin/zsh linuxbrew && \
     usermod -aG sudo linuxbrew &&  \
     mkdir -p /home/linuxbrew/.linuxbrew && \
     chown -R linuxbrew: /home/linuxbrew/.linuxbrew
 USER linuxbrew
-WORKDIR /home/linuxbrew
-RUN /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-
-USER rmikl
-RUN echo 'eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"' >> /home/rmikl/.bashrc && \
-    eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
-
+RUN /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
+USER root
+RUN chown -R $CONTAINER_USER: /home/linuxbrew/.linuxbrew
+ENV PATH="/home/linuxbrew/.linuxbrew/bin:${PATH}"
+RUN git config --global --add safe.directory /home/linuxbrew/.linuxbrew/Homebrew
+USER linuxbrew
+RUN brew update
+RUN brew doctor
 
 # 7. Switch to 'rmikl' user for Homebrew installation
 WORKDIR /home/rmikl

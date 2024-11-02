@@ -1,5 +1,5 @@
 FROM consol/debian-xfce-vnc:nightly
-USER root
+
 # 1. Install essential packages and dependencies
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
@@ -13,9 +13,11 @@ RUN apt-get update && \
         ruby-full \
         locales \
         vim \
-        gpg \
-        sudo && \
-    rm -rf /var/lib/apt/lists/*
+        sudo \
+        gnupg2 \
+        ca-certificates \
+        dirmngr \
+    && rm -rf /var/lib/apt/lists/*
 
 # 2. Configure locales
 RUN localedef -i en_US -f UTF-8 en_US.UTF-8
@@ -47,16 +49,24 @@ RUN /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/instal
     echo 'eval "$(/home/rmikl/.linuxbrew/bin/brew shellenv)"' >> /home/rmikl/.bash_profile
 
 # 8. Set environment variables for Homebrew
-ENV PATH="/home/rmikl/.linuxbrew/bin:${PATH}"
-ENV HOMEBREW_NO_AUTO_UPDATE=1
-ENV USER=rmikl
+ENV PATH="/home/rmikl/.linuxbrew/bin:/home/rmikl/.linuxbrew/sbin:${PATH}" \
+    HOMEBREW_NO_AUTO_UPDATE=1 \
+    USER=rmikl
 
-# 9. Install kubectl and helm using Homebrew
-RUN brew install kubectl helm
+# 9. Verify Homebrew installation
+RUN brew --version
 
-# 10. Install Zsh and Oh-My-Zsh
-RUN brew install zsh && \
-    sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" || true
+# 10. Install kubectl and helm using Homebrew
+RUN brew install kubectl helm && \
+    brew cleanup
 
-# 11. (Optional) Set Zsh as the default shell for 'rmikl'
+# 11. Install Zsh via Homebrew
+RUN brew install zsh
+
+# 12. Install Oh-My-Zsh manually to avoid interactive prompts
+RUN git clone https://github.com/ohmyzsh/ohmyzsh.git /home/rmikl/.oh-my-zsh && \
+    cp /home/rmikl/.oh-my-zsh/templates/zshrc.zsh-template /home/rmikl/.zshrc && \
+    chown -R rmikl:rmikl /home/rmikl/.oh-my-zsh /home/rmikl/.zshrc
+
+# 13. (Optional) Set Zsh as the default shell for 'rmikl'
 RUN chsh -s /bin/zsh rmikl

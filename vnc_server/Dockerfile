@@ -57,6 +57,10 @@ RUN useradd -m -s /bin/zsh linuxbrew && \
 USER rmikl
 RUN /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 
+RUN echo 'eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"' >> /home/rmikl/.bashrc && \
+    eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+
+
 # 7. Switch to 'rmikl' user for Homebrew installation
 WORKDIR /home/rmikl
 ENV USER=rmikl

@@ -1,32 +1,56 @@
-FROM elestio/docker-desktop-vnc:latest
+FROM consol/debian-xfce-vnc:nightly
 
-# Install brew
+# 1. Install essential packages and dependencies
 RUN apt-get update && \
-    apt-get install build-essential wget software-properties-common apt-transport-https curl file git ruby-full locales vim --no-install-recommends -y && \
+    apt-get install -y --no-install-recommends \
+        build-essential \
+        wget \
+        software-properties-common \
+        apt-transport-https \
+        curl \
+        file \
+        git \
+        ruby-full \
+        locales \
+        vim \
+        sudo && \
     rm -rf /var/lib/apt/lists/*
-RUN wget -q https://packages.microsoft.com/keys/microsoft.asc -O- | sudo apt-key add - && \
-    add-apt-repository "deb [arch=amd64] https://packages.microsoft.com/repos/vscode stable main" && \
-    apt update && \
-    apt install code -y
 
+# 2. Configure locales
 RUN localedef -i en_US -f UTF-8 en_US.UTF-8
-RUN useradd -m -s /bin/bash linuxbrew && \
-    echo 'linuxbrew ALL=(ALL) NOPASSWD:ALL' >>/etc/sudoers
 
-RUN mkdir -p /home/ubuntu/.cache/Homebrew && \
-    chown -R linuxbrew: /home/ubuntu/
-    
-USER linuxbrew
-RUN /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-ENV PATH="/home/linuxbrew/.linuxbrew/bin:${PATH}"
+# 3. Add Microsoft repository and install VS Code
+RUN wget -q https://packages.microsoft.com/keys/microsoft.asc -O- | apt-key add - && \
+    add-apt-repository "deb [arch=amd64] https://packages.microsoft.com/repos/vscode stable main" && \
+    apt-get update && \
+    apt-get install -y code
 
-ENV USER=linuxbrew
-# Install kubectl
-WORKDIR /home/linuxbrew
-RUN brew install kubectl helm 
+# 4. Create user 'rmikl' with sudo privileges
+RUN useradd -m -s /bin/bash rmikl && \
+    echo 'rmikl ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
 
-#Install zsh and oh-my-zsh
+# 5. Set up Homebrew environment for 'rmikl'
+RUN mkdir -p /home/rmikl/.cache/Homebrew && \
+    chown -R rmikl:rmikl /home/rmikl/.cache/Homebrew
+
+# 6. Switch to 'rmikl' user for Homebrew installation
+USER rmikl
+
+# 7. Install Homebrew for 'rmikl'
+RUN /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" && \
+    echo 'eval "$(/home/rmikl/.linuxbrew/bin/brew shellenv)"' >> /home/rmikl/.bash_profile
+
+# 8. Set environment variables for Homebrew
+ENV PATH="/home/rmikl/.linuxbrew/bin:${PATH}"
+ENV HOMEBREW_NO_AUTO_UPDATE=1
+ENV USER=rmikl
+
+# 9. Install kubectl and helm using Homebrew
+RUN brew install kubectl helm
+
+# 10. Install Zsh and Oh-My-Zsh
 RUN brew install zsh && \
-    sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+    sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" || true
 
-USER root
+# 11. (Optional) Set Zsh as the default shell for 'rmikl'
+RUN chsh -s /bin/zsh rmikl

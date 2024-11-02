@@ -42,35 +42,40 @@ RUN useradd -m -s /bin/bash rmikl && \
 RUN mkdir -p /home/rmikl/.cache/Homebrew && \
     chown -R rmikl:rmikl /home/rmikl/.cache/Homebrew
 
-# 6. Set environment variables HOME, HOMEBREW_PREFIX, and CI before switching user
+# 6. Set environment variables for Homebrew and HOME before switching user
 ENV HOME=/home/rmikl \
     HOMEBREW_PREFIX=/home/rmikl/.linuxbrew \
+    HOMEBREW_REPOSITORY=/home/rmikl/.linuxbrew/Homebrew \
+    HOMEBREW_CELLAR=/home/rmikl/.linuxbrew/Cellar \
     CI=1
 
 # 7. Switch to 'rmikl' user for Homebrew installation
 USER rmikl
 
-# 8. Install Homebrew for 'rmikl'
-RUN /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" && \
-    echo 'eval "$(/home/rmikl/.linuxbrew/bin/brew shellenv)"' >> /home/rmikl/.bash_profile
+# 8. Install Homebrew for 'rmikl' with environment variables set inline
+RUN /bin/bash -c " \
+    echo 'Installing Homebrew...' && \
+    /bin/bash -c \"$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\" > /home/rmikl/brew_install.log 2>&1 && \
+    cat /home/rmikl/brew_install.log && \
+    echo 'eval \"$(/home/rmikl/.linuxbrew/bin/brew shellenv)\"' >> /home/rmikl/.bash_profile"
 
 # 9. Set environment variables for Homebrew
 ENV PATH="/home/rmikl/.linuxbrew/bin:/home/rmikl/.linuxbrew/sbin:${PATH}" \
     HOMEBREW_NO_AUTO_UPDATE=1 \
     USER=rmikl
 
-# 10. Verify Homebrew installation
+# 10. Verify Homebrew installation directory
 RUN ls -la /home/rmikl/.linuxbrew/bin
 
 # 11. Verify Homebrew installation
-RUN brew --version
+RUN /home/rmikl/.linuxbrew/bin/brew --version
 
 # 12. Install kubectl and helm using Homebrew
-RUN brew install kubectl helm && \
-    brew cleanup
+RUN /home/rmikl/.linuxbrew/bin/brew install kubectl helm && \
+    /home/rmikl/.linuxbrew/bin/brew cleanup
 
 # 13. Install Zsh via Homebrew
-RUN brew install zsh
+RUN /home/rmikl/.linuxbrew/bin/brew install zsh
 
 # 14. Install Oh-My-Zsh manually to avoid interactive prompts
 RUN git clone https://github.com/ohmyzsh/ohmyzsh.git /home/rmikl/.oh-my-zsh && \

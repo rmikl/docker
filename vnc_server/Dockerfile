@@ -75,6 +75,8 @@ RUN brew install zsh
 RUN git clone https://github.com/ohmyzsh/ohmyzsh.git /home/rmikl/.oh-my-zsh && \
     cp /home/rmikl/.oh-my-zsh/templates/zshrc.zsh-template /home/rmikl/.zshrc && \
     chown -R rmikl:rmikl /home/rmikl/.oh-my-zsh /home/rmikl/.zshrc
-
+USER root
 # 15. (Optional) Set Zsh as the default shell for 'rmikl'
 RUN chsh -s /bin/zsh rmikl
+
+USER rmikl

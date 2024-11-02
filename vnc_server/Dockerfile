@@ -1,5 +1,6 @@
 FROM consol/debian-xfce-vnc:nightly
 USER root
+
 # 1. Install essential packages and dependencies
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
@@ -48,10 +49,14 @@ USER rmikl
 RUN /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" && \
     echo 'eval "$(/home/rmikl/.linuxbrew/bin/brew shellenv)"' >> /home/rmikl/.bash_profile
 
-# 8. Set environment variables for Homebrew
-ENV PATH="/home/rmikl/.linuxbrew/bin:/home/rmikl/.linuxbrew/sbin:${PATH}" \
+# 8. Set environment variables for Homebrew and HOME
+ENV HOME=/home/rmikl \
+    PATH="/home/rmikl/.linuxbrew/bin:/home/rmikl/.linuxbrew/sbin:${PATH}" \
     HOMEBREW_NO_AUTO_UPDATE=1 \
     USER=rmikl
+
+# 8.1. Verify Homebrew installation directory
+RUN ls -la /home/rmikl/.linuxbrew/bin
 
 # 9. Verify Homebrew installation
 RUN brew --version

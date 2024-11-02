@@ -54,9 +54,10 @@ RUN useradd -m -s /bin/zsh linuxbrew && \
     usermod -aG sudo linuxbrew &&  \
     mkdir -p /home/linuxbrew/.linuxbrew && \
     chown -R linuxbrew: /home/linuxbrew/.linuxbrew
-USER rmikl
+USER linuxbrew
 RUN /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 
+USER rmikl
 RUN echo 'eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"' >> /home/rmikl/.bashrc && \
     eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
 

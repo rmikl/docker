@@ -18,6 +18,7 @@ RUN apt-get update && \
         gnupg2 \
         ca-certificates \
         dirmngr \
+        thunar \
     && rm -rf /var/lib/apt/lists/*
 
 # 2. Configure locales
@@ -65,18 +66,17 @@ USER rmikl
 # 12. Install kubectl and helm using Homebrew
 RUN brew update
 RUN brew doctor
-RUN brew install kubectl helm && \
+RUN brew install kubectl helm kubens kubectx fzf && \
     brew cleanup
 
 # 13. Install Zsh via Homebrew
-RUN brew install zsh
+RUN brew install zsh 
 
 # 14. Install Oh-My-Zsh manually to avoid interactive prompts
 RUN git clone https://github.com/ohmyzsh/ohmyzsh.git /home/rmikl/.oh-my-zsh && \
     cp /home/rmikl/.oh-my-zsh/templates/zshrc.zsh-template /home/rmikl/.zshrc && \
-    chown -R rmikl:rmikl /home/rmikl/.oh-my-zsh /home/rmikl/.zshrc
-USER root
-# 15. (Optional) Set Zsh as the default shell for 'rmikl'
-RUN chsh -s /bin/zsh rmikl
+    chown -R rmikl:rmikl /home/rmikl/.oh-my-zsh /home/rmikl/.zshrc 
 
+USER root
+RUN chsh -s /bin/zsh rmikl
 USER rmikl

@@ -66,7 +66,7 @@ USER rmikl
 # 12. Install kubectl and helm using Homebrew
 RUN brew update
 RUN brew doctor
-RUN brew install kubectl helm kubens kubectx fzf && \
+RUN brew install kubectl helm kubectx fzf && \
     brew cleanup
 
 # 13. Install Zsh via Homebrew

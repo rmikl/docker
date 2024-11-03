@@ -20,7 +20,6 @@ RUN apt-get update && \
         ca-certificates \
         dirmngr \
         thunar \
-        unrar \
         thunar-archive-plugin \
     && rm -rf /var/lib/apt/lists/*
 

@@ -11,6 +11,7 @@ RUN apt-get update && \
         curl \
         file \
         git \
+        ssh \
         ruby-full \
         locales \
         vim \

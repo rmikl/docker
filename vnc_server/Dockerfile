@@ -1,84 +1,59 @@
-FROM consol/debian-xfce-vnc:nightly
-USER root
+# W razie braku oficjalnego obrazu 24.04 możesz użyć:
+# FROM ubuntu:24.04
+FROM ubuntu:22.04
 
-# 1. Install essential packages and dependencies
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-        build-essential \
-        wget \
-        software-properties-common \
-        apt-transport-https \
-        curl \
-        file \
-        git \
-        ssh \
-        ruby-full \
-        locales \
-        vim \
-        sudo \
-        gnupg2 \
-        ca-certificates \
-        dirmngr \
-        thunar \
-        thunar-archive-plugin \
+ENV DEBIAN_FRONTEND=noninteractive
+ENV VNC_RESOLUTION="1280x800"
+ENV VNC_PASSWD="password"
+ENV DISPLAY=":1"
+
+# Instalacja podstawowych pakietów + pakiety VNC/NoVNC/xfce4
+RUN apt-get update && apt-get install -y \
+    xfce4 \
+    tigervnc-standalone-server \
+    novnc \
+    python3-websockify \
+    wget \
+    git \
+    xterm \
+    supervisor \
+    xkb-data \
+    x11-xkb-utils \
+    net-tools \
+    software-properties-common \
     && rm -rf /var/lib/apt/lists/*
 
-# 2. Configure locales
-RUN localedef -i en_US -f UTF-8 en_US.UTF-8
+# Instalacja Visual Studio Code z repozytorium Microsoftu
+RUN wget -qO - https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor | tee /usr/share/keyrings/ms_vscode_key.gpg > /dev/null \
+ && echo "deb [arch=amd64 signed-by=/usr/share/keyrings/ms_vscode_key.gpg] https://packages.microsoft.com/repos/code stable main" | tee /etc/apt/sources.list.d/vscode.list \
+ && apt-get update \
+ && apt-get install -y code \
+ && rm -rf /var/lib/apt/lists/*
 
-# 3. Add Microsoft repository and install VS Code
-RUN mkdir -p /etc/apt/keyrings && \
-    wget -qO- https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > packages.microsoft.gpg && \
-    install -D -o root -g root -m 644 packages.microsoft.gpg /etc/apt/keyrings/packages.microsoft.gpg && \
-    echo "deb [arch=amd64,arm64,armhf signed-by=/etc/apt/keyrings/packages.microsoft.gpg] https://packages.microsoft.com/repos/code stable main" | \
-    tee /etc/apt/sources.list.d/vscode.list > /dev/null && \
-    rm -f packages.microsoft.gpg
+# Instalacja Firefoksa (w Ubuntu 22.04 zazwyczaj jest to pakiet snap, ale istnieje również transitional package)
+RUN apt-get update && apt-get install -y firefox && rm -rf /var/lib/apt/lists/*
 
-RUN apt update && \
-    apt install -y code # or code-insiders
+# Skrypt uruchamiający VNC + noVNC
+RUN mkdir -p /opt/scripts
+RUN echo '#!/usr/bin/env bash' > /opt/scripts/startup.sh \
+ && echo '' >> /opt/scripts/startup.sh \
+ && echo '# Ustaw hasło do VNC (domyślnie: password)' >> /opt/scripts/startup.sh \
+ && echo 'mkdir -p ~/.vnc' >> /opt/scripts/startup.sh \
+ && echo "echo \"\$VNC_PASSWD\" | vncpasswd -f > ~/.vnc/passwd" >> /opt/scripts/startup.sh \
+ && echo 'chmod 600 ~/.vnc/passwd' >> /opt/scripts/startup.sh \
+ && echo '' >> /opt/scripts/startup.sh \
+ && echo '# Start TigerVNC' >> /opt/scripts/startup.sh \
+ && echo "vncserver \$DISPLAY -geometry \$VNC_RESOLUTION -depth 24" >> /opt/scripts/startup.sh \
+ && echo '' >> /opt/scripts/startup.sh \
+ && echo '# Uruchom noVNC' >> /opt/scripts/startup.sh \
+ && echo 'websockify --web=/usr/share/novnc/ 0.0.0.0:6080 127.0.0.1:5901 &' >> /opt/scripts/startup.sh \
+ && echo '' >> /opt/scripts/startup.sh \
+ && echo '# Pozostaw proces "w tle" – tutaj w nieskończonej pętli' >> /opt/scripts/startup.sh \
+ && echo 'tail -f /dev/null' >> /opt/scripts/startup.sh
 
-# 4. Create user 'rmikl' with sudo privileges
-RUN useradd -m -s /bin/bash rmikl && \
-    echo 'rmikl ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
+RUN chmod +x /opt/scripts/startup.sh
 
+# EXPOSE informacyjne (VNC i noVNC)
+EXPOSE 5901 6080
 
-RUN apt-get update && \
-    apt-get install -y -q --allow-unauthenticated \
-    git \
-    sudo
-RUN useradd -m -s /bin/zsh linuxbrew && \
-    usermod -aG sudo linuxbrew &&  \
-    mkdir -p /home/linuxbrew/.linuxbrew && \
-    chown -R linuxbrew: /home/linuxbrew/.linuxbrew
-USER linuxbrew
-RUN /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
-USER root
-RUN chown -R $CONTAINER_USER: /home/linuxbrew/.linuxbrew
-ENV PATH="/home/linuxbrew/.linuxbrew/bin:${PATH}"
-RUN git config --global --add safe.directory /home/linuxbrew/.linuxbrew/Homebrew
-USER root
-
-RUN sudo chown -R rmikl /headless/.cache/Homebrew /home/linuxbrew/.linuxbrew/Cellar /home/linuxbrew/.linuxbrew/Homebrew /home/linuxbrew/.linuxbrew/bin /home/linuxbrew/.linuxbrew/etc /home/linuxbrew/.linuxbrew/etc/bash_completion.d /home/linuxbrew/.linuxbrew/include /home/linuxbrew/.linuxbrew/lib /home/linuxbrew/.linuxbrew/opt /home/linuxbrew/.linuxbrew/sbin /home/linuxbrew/.linuxbrew/share /home/linuxbrew/.linuxbrew/share/doc /home/linuxbrew/.linuxbrew/share/man /home/linuxbrew/.linuxbrew/share/man/man1 /home/linuxbrew/.linuxbrew/share/zsh /home/linuxbrew/.linuxbrew/share/zsh/site-functions /home/linuxbrew/.linuxbrew/var/homebrew/linked /home/linuxbrew/.linuxbrew/var/homebrew/locks
-RUN chmod u+w /headless/.cache/Homebrew /home/linuxbrew/.linuxbrew/Cellar /home/linuxbrew/.linuxbrew/Homebrew /home/linuxbrew/.linuxbrew/bin /home/linuxbrew/.linuxbrew/etc /home/linuxbrew/.linuxbrew/etc/bash_completion.d /home/linuxbrew/.linuxbrew/include /home/linuxbrew/.linuxbrew/lib /home/linuxbrew/.linuxbrew/opt /home/linuxbrew/.linuxbrew/sbin /home/linuxbrew/.linuxbrew/share /home/linuxbrew/.linuxbrew/share/doc /home/linuxbrew/.linuxbrew/share/man /home/linuxbrew/.linuxbrew/share/man/man1 /home/linuxbrew/.linuxbrew/share/zsh /home/linuxbrew/.linuxbrew/share/zsh/site-functions /home/linuxbrew/.linuxbrew/var/homebrew/linked /home/linuxbrew/.linuxbrew/var/homebrew/locks
-
-# 7. Switch to 'rmikl' user for Homebrew installation
-WORKDIR /home/rmikl
-ENV USER=rmikl
-USER rmikl
-# 12. Install kubectl and helm using Homebrew
-RUN brew update
-RUN brew doctor
-RUN brew install kubectl helm kubectx fzf && \
-    brew cleanup
-
-# 13. Install Zsh via Homebrew
-RUN brew install zsh 
-
-# 14. Install Oh-My-Zsh manually to avoid interactive prompts
-RUN git clone https://github.com/ohmyzsh/ohmyzsh.git /home/rmikl/.oh-my-zsh && \
-    cp /home/rmikl/.oh-my-zsh/templates/zshrc.zsh-template /home/rmikl/.zshrc && \
-    chown -R rmikl:rmikl /home/rmikl/.oh-my-zsh /home/rmikl/.zshrc 
-
-USER root
-RUN chsh -s /bin/zsh rmikl
-USER rmikl
+CMD ["/opt/scripts/startup.sh"]

@@ -1,6 +1,5 @@
-# Use smaller base image with Python 3.11
-FROM rayproject/ray:2.13.0-py311-cpu
-
+# Use Ray's official CPU image
+FROM rayproject/ray:nightly-py311-cpu
 # Install dependencies first (for layer caching)
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt

@@ -1,6 +1,7 @@
-ray[default]
+ray[default]==2.13.0
 transformers==4.40.0
 torch==2.3.0
-sentencepiece
-hf_transfer==0.1.4
-accelerate==0.30.0  # <- Critical addition
+sentencepiece==0.2.0
+accelerate==0.30.0
+bitsandbytes==0.43.0
+huggingface-hub==0.22.2

@@ -1,4 +1,4 @@
-from transformers import AutoModelForCausalLM
+from transformers import AutoModelForCausalLM, BitsAndBytesConfig
 import time
 import logging
 
@@ -9,16 +9,19 @@ MAX_RETRIES = 3
 RETRY_DELAY = 30
 
 def download_model():
-    """Download model with retries and progress tracking"""
+    quant_config = BitsAndBytesConfig(
+        load_in_8bit=True,
+        llm_int8_threshold=6.0
+    )
+    
     for attempt in range(1, MAX_RETRIES + 1):
         try:
             logger.info(f"Download attempt {attempt}/{MAX_RETRIES}")
             
             AutoModelForCausalLM.from_pretrained(
                 "TinyLlama/TinyLlama-1.1B-Chat-v1.0",
-                device_map="cpu",
-                local_files_only=False,
-                load_in_8bit=True,
+                device_map="auto",
+                quantization_config=quant_config,
                 low_cpu_mem_usage=True
             )
             

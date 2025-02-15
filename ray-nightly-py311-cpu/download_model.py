@@ -11,7 +11,8 @@ RETRY_DELAY = 30
 def download_model():
     quant_config = BitsAndBytesConfig(
         load_in_8bit=True,
-        llm_int8_threshold=6.0
+        llm_int8_threshold=6.0,
+        bnb_4bit_use_double_quant=False
     )
     
     for attempt in range(1, MAX_RETRIES + 1):
@@ -20,7 +21,7 @@ def download_model():
             
             AutoModelForCausalLM.from_pretrained(
                 "TinyLlama/TinyLlama-1.1B-Chat-v1.0",
-                device_map="auto",
+                device_map="cpu",
                 quantization_config=quant_config,
                 low_cpu_mem_usage=True
             )

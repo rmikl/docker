@@ -27,8 +27,8 @@ def deploy_llm_service():
             num_replicas=1,
             ray_actor_options={
                 "num_cpus": 4,
-                "resources": {"node:lap-dell": 0.1}  
-                "memory": 10000 * 1024**3
+                "resources": {"node:lap-dell": 0.1}, 
+                "memory": 10 * 1024**3
             }
         )
         class LLMDeployment:

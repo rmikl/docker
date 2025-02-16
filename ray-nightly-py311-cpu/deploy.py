@@ -1,19 +1,24 @@
 import ray
 from ray import serve
 import logging
-import time 
+import time
 from tiny_llm import TinyLLM
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.DEBUG)  # Increased to DEBUG
 logger = logging.getLogger(__name__)
 
 def deploy_llm_service():
     try:
-        # Initialize connection to cluster
-        ray.init(address="auto")
-        logger.info("Connected to Ray cluster")
+        # 1. Initialize Ray with explicit resource awareness
+        ray.init(
+            address="auto",
+            runtime_env={"env_vars": {"RAY_RESOURCES": '{"lap-dell-node": 1}'}},
+            logging_level="DEBUG"
+        )
+        logger.debug(f"Ray resources: {ray.cluster_resources()}")
 
-        # Configure Serve for lap-dell node
+        # 2. Explicit Serve initialization check
+        logger.debug("Initializing Serve...")
         serve.start(
             http_options={
                 "host": "0.0.0.0",
@@ -21,35 +26,39 @@ def deploy_llm_service():
                 "location": "EveryNode"
             }
         )
+        logger.debug(f"Serve status: {serve.status()}")
 
+        # 3. Deployment with resource validation
         @serve.deployment(
             route_prefix="/generate",
-            num_replicas=1,
             ray_actor_options={
                 "num_cpus": 4,
-                "resources": {"node:lap-dell": 0.1}, 
-                "memory": 10 * 1024**3
+                "resources": {"lap-dell-node": 0.1},
+                "memory": 18 * 1024**3
             }
         )
         class LLMDeployment:
             def __init__(self):
+                logger.debug("Initializing LLM...")
                 self.llm = TinyLLM()
-            
+                logger.info("LLM ready on lap-dell-node")
+
             async def __call__(self, request):
-                data = await request.json()
-                return self.llm.predict(data["prompt"])
+                return self.llm.predict(await request.json())
 
-        # Deploy to lap-dell
-        serve.run(LLMDeployment.bind())
-        logger.info("HTTP endpoint available at /generate on lap-dell")
-
-        # Keep alive
+        # 4. Deployment verification
+        logger.debug("Binding deployment...")
+        handle = serve.run(LLMDeployment.bind())
+        logger.info("HTTP endpoint available at /generate")
+        
+        # 5. Active health checks
         while True:
-            ray.get(LLMDeployment.get_handle().generate.remote("Heartbeat"))
+            logger.debug("Health check...")
+            ray.get(handle.generate.remote("Heartbeat"))
             time.sleep(5)
 
     except Exception as e:
-        logger.error(f"Deployment failed: {str(e)}")
+        logger.critical(f"DEPLOYMENT FAILED: {str(e)}", exc_info=True)
         raise
 
 if __name__ == "__main__":

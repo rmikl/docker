@@ -1,18 +1,19 @@
 import ray
-from ray import serve  # <-- Add Serve import
+from ray import serve
 import logging
+import time 
 from tiny_llm import TinyLLM
 
-# Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-def deploy_llm_service():  # Renamed for clarity
+def deploy_llm_service():
     try:
+        # Initialize connection to cluster
         ray.init(address="auto")
         logger.info("Connected to Ray cluster")
 
-        # Start Serve with HTTP endpoint
+        # Configure Serve for lap-dell node
         serve.start(
             http_options={
                 "host": "0.0.0.0",
@@ -21,8 +22,15 @@ def deploy_llm_service():  # Renamed for clarity
             }
         )
 
-        @serve.deployment(route_prefix="/generate")
-        @ray.remote(num_cpus=2, resources={"node:lap-msi": 0.1})
+        @serve.deployment(
+            route_prefix="/generate",
+            num_replicas=1,
+            ray_actor_options={
+                "num_cpus": 4,
+                "resources": {"node:lap-dell": 0.1}  
+                "memory": 10000 * 1024**3
+            }
+        )
         class LLMDeployment:
             def __init__(self):
                 self.llm = TinyLLM()
@@ -31,13 +39,13 @@ def deploy_llm_service():  # Renamed for clarity
                 data = await request.json()
                 return self.llm.predict(data["prompt"])
 
-        # Deploy both actor and HTTP endpoint
+        # Deploy to lap-dell
         serve.run(LLMDeployment.bind())
-        logger.info("HTTP endpoint available at /generate")
+        logger.info("HTTP endpoint available at /generate on lap-dell")
 
-        # Keep the service running
+        # Keep alive
         while True:
-            ray.get(serve.get_deployment("LLMDeployment").get_handle().generate.remote("Heartbeat"))
+            ray.get(LLMDeployment.get_handle().generate.remote("Heartbeat"))
             time.sleep(5)
 
     except Exception as e:

@@ -47,5 +47,3 @@ RUN apt-get update -o Acquire::Check-Valid-Until=false && \
 
 # Install ohmyzsh
 RUN wget -q https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh -O- | sh
-
-USER abc

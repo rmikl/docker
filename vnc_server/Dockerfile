@@ -1,84 +1,58 @@
-FROM consol/debian-xfce-vnc:nightly
+FROM lscr.io/linuxserver/webtop:ubuntu-kde
 USER root
 
-# 1. Install essential packages and dependencies
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-        build-essential \
-        wget \
-        software-properties-common \
-        apt-transport-https \
-        curl \
-        file \
-        git \
-        ssh \
-        ruby-full \
-        locales \
-        vim \
-        sudo \
-        gnupg2 \
-        ca-certificates \
-        dirmngr \
-        thunar \
-        thunar-archive-plugin \
-    && rm -rf /var/lib/apt/lists/*
-
-# 2. Configure locales
-RUN localedef -i en_US -f UTF-8 en_US.UTF-8
-
-# 3. Add Microsoft repository and install VS Code
-RUN mkdir -p /etc/apt/keyrings && \
-    wget -qO- https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > packages.microsoft.gpg && \
-    install -D -o root -g root -m 644 packages.microsoft.gpg /etc/apt/keyrings/packages.microsoft.gpg && \
-    echo "deb [arch=amd64,arm64,armhf signed-by=/etc/apt/keyrings/packages.microsoft.gpg] https://packages.microsoft.com/repos/code stable main" | \
-    tee /etc/apt/sources.list.d/vscode.list > /dev/null && \
-    rm -f packages.microsoft.gpg
+ENV DEBIAN_FRONTEND=noninteractive
 
 RUN apt update && \
-    apt install -y code # or code-insiders
+    apt install -y \
+        wget \
+        curl \
+        apt-transport-https \
+        software-properties-common \
+        gpg
 
-# 4. Create user 'rmikl' with sudo privileges
-RUN useradd -m -s /bin/bash rmikl && \
-    echo 'rmikl ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
+# Prepare system
 
+RUN curl -s https://packagecloud.io/install/repositories/datawireio/telepresence/script.deb.sh | bash
 
-RUN apt-get update && \
-    apt-get install -y -q --allow-unauthenticated \
-    git \
-    sudo
-RUN useradd -m -s /bin/zsh linuxbrew && \
-    usermod -aG sudo linuxbrew &&  \
-    mkdir -p /home/linuxbrew/.linuxbrew && \
-    chown -R linuxbrew: /home/linuxbrew/.linuxbrew
-USER linuxbrew
-RUN /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
-USER root
-RUN chown -R $CONTAINER_USER: /home/linuxbrew/.linuxbrew
-ENV PATH="/home/linuxbrew/.linuxbrew/bin:${PATH}"
-RUN git config --global --add safe.directory /home/linuxbrew/.linuxbrew/Homebrew
-USER root
+# Key management for repositories (modern approach)
+RUN mkdir -p /etc/apt/keyrings
 
-RUN sudo chown -R rmikl /headless/.cache/Homebrew /home/linuxbrew/.linuxbrew/Cellar /home/linuxbrew/.linuxbrew/Homebrew /home/linuxbrew/.linuxbrew/bin /home/linuxbrew/.linuxbrew/etc /home/linuxbrew/.linuxbrew/etc/bash_completion.d /home/linuxbrew/.linuxbrew/include /home/linuxbrew/.linuxbrew/lib /home/linuxbrew/.linuxbrew/opt /home/linuxbrew/.linuxbrew/sbin /home/linuxbrew/.linuxbrew/share /home/linuxbrew/.linuxbrew/share/doc /home/linuxbrew/.linuxbrew/share/man /home/linuxbrew/.linuxbrew/share/man/man1 /home/linuxbrew/.linuxbrew/share/zsh /home/linuxbrew/.linuxbrew/share/zsh/site-functions /home/linuxbrew/.linuxbrew/var/homebrew/linked /home/linuxbrew/.linuxbrew/var/homebrew/locks
-RUN chmod u+w /headless/.cache/Homebrew /home/linuxbrew/.linuxbrew/Cellar /home/linuxbrew/.linuxbrew/Homebrew /home/linuxbrew/.linuxbrew/bin /home/linuxbrew/.linuxbrew/etc /home/linuxbrew/.linuxbrew/etc/bash_completion.d /home/linuxbrew/.linuxbrew/include /home/linuxbrew/.linuxbrew/lib /home/linuxbrew/.linuxbrew/opt /home/linuxbrew/.linuxbrew/sbin /home/linuxbrew/.linuxbrew/share /home/linuxbrew/.linuxbrew/share/doc /home/linuxbrew/.linuxbrew/share/man /home/linuxbrew/.linuxbrew/share/man/man1 /home/linuxbrew/.linuxbrew/share/zsh /home/linuxbrew/.linuxbrew/share/zsh/site-functions /home/linuxbrew/.linuxbrew/var/homebrew/linked /home/linuxbrew/.linuxbrew/var/homebrew/locks
+# Microsoft VSCode (verified from packages.microsoft.com/repos/vscode/dists/stable)
+RUN wget -qO- https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor -o /etc/apt/keyrings/microsoft-vscode.gpg && \
+    echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/microsoft-vscode.gpg] https://packages.microsoft.com/repos/vscode stable main" | tee /etc/apt/sources.list.d/vscode.list
 
-# 7. Switch to 'rmikl' user for Homebrew installation
-WORKDIR /home/rmikl
-ENV USER=rmikl
-USER rmikl
-# 12. Install kubectl and helm using Homebrew
-RUN brew update
-RUN brew doctor
-RUN brew install kubectl helm kubectx fzf && \
-    brew cleanup
+# GitHub CLI (fixed signing key)
+RUN curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | gpg --dearmor -o /etc/apt/keyrings/githubcli-archive-keyring.gpg && \
+    echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | tee /etc/apt/sources.list.d/github-cli.list
 
-# 13. Install Zsh via Homebrew
-RUN brew install zsh 
+# Update with verified sources
+RUN apt update -o Acquire::Check-Valid-Until=false
 
-# 14. Install Oh-My-Zsh manually to avoid interactive prompts
-RUN git clone https://github.com/ohmyzsh/ohmyzsh.git /home/rmikl/.oh-my-zsh && \
-    cp /home/rmikl/.oh-my-zsh/templates/zshrc.zsh-template /home/rmikl/.zshrc && \
-    chown -R rmikl:rmikl /home/rmikl/.oh-my-zsh /home/rmikl/.zshrc 
+# Install packages with proper repository validation
+RUN apt install -y \
+        code \
+        tree \
+        git \
+        gh \
+        vim \
+        fzf \
+        inetutils-ping \
+        inetutils-telnet \
+        zsh \
+        sshpass \
+        tilix \
+        engrampa \
+        containerd \
+        telepresence && \
+# Cleanup legacy keyring references
+    rm -f /etc/apt/trusted.gpg.d/*
 
-USER root
-RUN chsh -s /bin/zsh rmikl
-USER rmikl
+#OTHER BINS
+#KUBECTL_VERSION=$(curl -L -s https://dl.k8s.io/release/stable.txt | grep -oP 'v\d+\.\d+\.\d+')
+RUN wget "https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl" -O /usr/local/bin/kubectl && chmod +x /usr/local/bin/kubectl
+
+RUN wget https://github.com/derailed/k9s/releases/download/v0.32.5/k9s_linux_amd64.deb && apt install ./k9s_linux_amd64.deb &&  rm k9s_linux_amd64.deb && \
+    sh -c "$(wget https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh -O -)"
+
+USER abc

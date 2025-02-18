@@ -35,6 +35,7 @@ RUN apt-get update -o Acquire::Check-Valid-Until=false && \
         fzf \
         zsh \
         tilix \
+        rsync \
         containerd \
         kubectl && \
     # Install k9s directly from GitHub

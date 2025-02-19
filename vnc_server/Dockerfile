@@ -1,4 +1,4 @@
-FROM lscr.io/linuxserver/webtop:ubuntu-kde
+FROM lscr.io/linuxserver/webtop:ubuntu-mate
 USER root
 
 ENV DEBIAN_FRONTEND=noninteractive
@@ -37,6 +37,9 @@ RUN apt-get update -o Acquire::Check-Valid-Until=false && \
         tilix \
         rsync \
         containerd \
+        sshpass \
+        lsof \
+        net-tools \
         kubectl && \
     # Install k9s directly from GitHub
     wget https://github.com/derailed/k9s/releases/download/v0.32.5/k9s_linux_amd64.deb && \

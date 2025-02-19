@@ -1,4 +1,4 @@
-FROM lscr.io/linuxserver/webtop:ubuntu-kde
+FROM lscr.io/linuxserver/webtop:ubuntu-mate
 USER root
 
 ENV DEBIAN_FRONTEND=noninteractive

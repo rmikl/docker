@@ -1,7 +1,7 @@
-# Remove bitsandbytes and use CPU-only quantization
 accelerate==0.30.0
 transformers==4.40.0
 torch==2.3.0
 sentencepiece==0.2.0
 huggingface-hub==0.23.0
 hf_transfer==0.1.4
+ray[serve]==2.42.1

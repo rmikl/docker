@@ -1,65 +1,86 @@
 import ray
 from ray import serve
+from transformers import AutoTokenizer, AutoModelForCausalLM
 import logging
-import time
-from tiny_llm import TinyLLM
+import torch
 
-logging.basicConfig(level=logging.DEBUG)  # Increased to DEBUG
+# Configure logging
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-def deploy_llm_service():
-    try:
-        # 1. Initialize Ray with explicit resource awareness
-        ray.init(
-            address="auto",
-            runtime_env={"env_vars": {"RAY_RESOURCES": '{"lap-dell-node": 1}'}},
-            logging_level="DEBUG"
-        )
-        logger.debug(f"Ray resources: {ray.cluster_resources()}")
+# Define TinyLLM class directly in deploy.py
+class TinyLLM:
+    def __init__(self):
+        self.logger = logging.getLogger(__name__)
+        self.device = "cpu"
+        self.model = None
+        self.tokenizer = None
+        self._load_model()
 
-        # 2. Explicit Serve initialization check
-        logger.debug("Initializing Serve...")
-        serve.start(
-            http_options={
-                "host": "0.0.0.0",
-                "port": 8000,
-                "location": "EveryNode"
-            }
-        )
-        logger.debug(f"Serve status: {serve.status()}")
+    def _load_model(self):
+        """Load model with error handling (no quantization)"""
+        try:
+            self.logger.info("Loading TinyLlama model...")
+            self.model = AutoModelForCausalLM.from_pretrained(
+                "TinyLlama/TinyLlama-1.1B-Chat-v1.0",
+                device_map=self.device,
+                torch_dtype=torch.float16,
+                low_cpu_mem_usage=True
+            )
+            self.tokenizer = AutoTokenizer.from_pretrained(
+                "TinyLlama/TinyLlama-1.1B-Chat-v1.0"
+            )
+            self.logger.info("Model loaded successfully")
+        except Exception as e:
+            self.logger.error(f"Model loading failed: {str(e)}")
+            raise
 
-        # 3. Deployment with resource validation
-        @serve.deployment(
-            route_prefix="/generate",
-            ray_actor_options={
-                "num_cpus": 4,
-                "resources": {"lap-dell-node": 0.1},
-                "memory": 18 * 1024**3
-            }
-        )
-        class LLMDeployment:
-            def __init__(self):
-                logger.debug("Initializing LLM...")
-                self.llm = TinyLLM()
-                logger.info("LLM ready on lap-dell-node")
+    def predict(self, prompt: str) -> str:
+        """Generate response with input validation"""
+        if not prompt or not isinstance(prompt, str):
+            raise ValueError("Prompt must be a non-empty string")
+        try:
+            inputs = self.tokenizer(
+                prompt,
+                return_tensors="pt",
+                max_length=512,
+                truncation=True
+            ).to(self.device)
+            outputs = self.model.generate(
+                **inputs,
+                max_new_tokens=100,
+                do_sample=True,
+                temperature=0.7,
+                top_k=50,
+                top_p=0.95,
+                repetition_penalty=1.2
+            )
+            return self.tokenizer.decode(outputs[0], skip_special_tokens=True)
+        except Exception as e:
+            self.logger.error(f"Prediction failed: {str(e)}")
+            raise
 
-            async def __call__(self, request):
-                return self.llm.predict(await request.json())
+# Initialize Ray (connect to the cluster)
+ray.init(address="auto")
 
-        # 4. Deployment verification
-        logger.debug("Binding deployment...")
-        handle = serve.run(LLMDeployment.bind())
-        logger.info("HTTP endpoint available at /generate")
-        
-        # 5. Active health checks
-        while True:
-            logger.debug("Health check...")
-            ray.get(handle.generate.remote("Heartbeat"))
-            time.sleep(5)
+# Define the deployment
+@serve.deployment
+class LLMServer:
+    def __init__(self):
+        self.llm = TinyLLM()
 
-    except Exception as e:
-        logger.critical(f"DEPLOYMENT FAILED: {str(e)}", exc_info=True)
-        raise
+    async def __call__(self, request):
+        try:
+            data = await request.json()
+            prompt = data["prompt"]
+            logger.info(f"Received prompt: {prompt}")
+            response = self.llm.predict(prompt)
+            logger.info(f"Generated response: {response}")
+            return response
+        except Exception as e:
+            logger.error(f"Request processing failed: {str(e)}")
+            raise
 
-if __name__ == "__main__":
-    deploy_llm_service()
+# Create and run the Serve application
+app = LLMServer.bind()
+serve.run(app, route_prefix="/llm", name="llm-service")

@@ -8,6 +8,7 @@ RUN apt-get update && \
         curl \
         gnupg \
         lsb-release \
+        jq \
         openssh-client \
         openssl && \
     rm -rf /var/lib/apt/lists/*

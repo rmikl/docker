@@ -23,4 +23,4 @@ jobs:
       scriptType: 'inline'
       inlineScript: |
         echo "Sprawdzanie wersji AWS CLI..."
-        kubectl --version
+        kubectl version

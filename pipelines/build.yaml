@@ -23,5 +23,4 @@ jobs:
       scriptType: 'inline'
       inlineScript: |
         echo "Sprawdzanie wersji AWS CLI..."
-        aws --version
-        # W tym miejscu powinien znajdować się skrypt, który faktycznie buduje obrazy Docker
+        kubectl --version

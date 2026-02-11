@@ -1,13 +1,15 @@
-FROM public.ecr.aws/docker/library/python:3.12-slim
+FROM public.ecr.aws/lambda/python:3.12
 
-WORKDIR /app
+# Add Lambda Web Adapter for API Gateway response streaming
+COPY --from=public.ecr.aws/awsguru/aws-lambda-adapter:0.9.1 /lambda-adapter /opt/extensions/lambda-adapter
 
-COPY ./requirements.txt /app/requirements.txt
+COPY ./api ./api
 
-RUN pip install --no-cache-dir --upgrade -r /app/requirements.txt
+COPY requirements.txt .
 
-COPY ./api /app/api
+RUN pip3 install -r requirements.txt -U --no-cache-dir
 
-ENV PORT=80
-
-CMD ["sh", "-c", "uvicorn api.app:app --host 0.0.0.0 --port ${PORT}"]
+# Lambda Web Adapter requires overriding the Lambda base image entrypoint
+# to run the web app directly instead of the Lambda runtime handler
+ENTRYPOINT []
+CMD ["python", "-m", "uvicorn", "api.app:app", "--host", "0.0.0.0", "--port", "8080"]

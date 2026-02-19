@@ -7,10 +7,13 @@ RUN apt-get update && \
         ca-certificates \
         curl \
         gnupg \
-        lsb-release && \
+        lsb-release \
+        jq \
+        openssh-client \
+        openssl && \
     rm -rf /var/lib/apt/lists/*
 
-ENV KUBECTL_VERSION=v1.30.3
+ENV KUBECTL_VERSION=v1.33.1
 
 # Download and install kubectl
 RUN curl -LO "https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl" && \

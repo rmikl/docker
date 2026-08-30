@@ -18,6 +18,8 @@
 #   BW_HOST         (optional) default https://bt.rmikl.pl
 #   NAMESPACES      (optional) space-separated namespaces; default = all non-system
 #   LABEL_SELECTOR  (optional) default vaultwarden-sync/enabled=true
+#   SKIP_SECRETS    (optional) comma-separated ns/name to exclude from sync
+#   NOTES_MAX       (optional) default 7000; skip items whose notes exceed it
 #   ITEM_PREFIX     (optional) default k8s/
 #   DRY_RUN         (optional) "true" = log only, do not write to Bitwarden
 
@@ -28,6 +30,8 @@ BW_EMAIL="${BW_EMAIL:?BW_EMAIL is required}"
 BW_PASSWORD="${BW_PASSWORD:?BW_PASSWORD is required}"
 NAMESPACES="${NAMESPACES:-}"
 LABEL_SELECTOR="${LABEL_SELECTOR:-vaultwarden-sync/enabled=true}"
+SKIP_SECRETS="${SKIP_SECRETS:-}"
+NOTES_MAX="${NOTES_MAX:-7000}"
 ITEM_PREFIX="${ITEM_PREFIX:-k8s/}"
 DRY_RUN="${DRY_RUN:-false}"
 nl=$'\n'   # newline, used as the jsonpath range separator
@@ -80,6 +84,13 @@ for ns in $ns_list; do
     total=$((total+1))
     item_name="${ITEM_PREFIX}${ns}/${sname}"
 
+    # Skip explicitly-excluded secrets (e.g. this tool's own credentials).
+    case ",$SKIP_SECRETS," in
+      *",$ns/$sname,"*)
+        log "SKIP $item_name (excluded via SKIP_SECRETS)"
+        skipped=$((skipped+1)); continue ;;
+    esac
+
     # Decode all data entries to plaintext key/value JSON.
     kv_json=$(kubectl get secret "$sname" -n "$ns" -o json \
       | jq '.data // {} | with_entries(.value |= @base64d)')
@@ -92,6 +103,15 @@ for ns in $ns_list; do
     notes=$(echo "$kv_json" | jq -r 'to_entries | map(.key + ": " + .value) | join("\n")')
     username=$(echo "$kv_json" | jq -r '.username // empty')
     password=$(echo "$kv_json" | jq -r '.password // empty')
+
+    # Bitwarden caps each encrypted field at 10000 chars; a plaintext note
+    # of ~7000B encrypts+base64s to under that. Skip anything larger (it
+    # cannot fit one item) rather than failing the whole run.
+    notes_bytes=$(printf '%s' "$notes" | wc -c)
+    if [ "$notes_bytes" -gt "$NOTES_MAX" ]; then
+      log "SKIP $item_name (notes ${notes_bytes}B > NOTES_MAX ${NOTES_MAX}B; over Bitwarden limit)"
+      skipped=$((skipped+1)); continue
+    fi
 
     if [ "$DRY_RUN" = "true" ]; then
       log "DRY-RUN upsert $item_name (keys=$(echo "$kv_json" | jq 'length'), username=${username:-<none>})"

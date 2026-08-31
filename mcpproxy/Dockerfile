@@ -1,9 +1,9 @@
 # mcpproxy + all stdio MCP servers in a single image.
 #
-# mcpproxy (static Go binary) aggregates 10 MCP servers:
-#   - 5 stdio servers (argocd, doppler, kubernetes, proxmox, ssh) are spawned
-#     in-process via npx (docker_isolation: none) — so this image ships node
-#     + the 5 npm packages pre-installed.
+# mcpproxy (static Go binary) aggregates 11 MCP servers:
+#   - 6 stdio servers (argocd, azure-devops, doppler, kubernetes, proxmox,
+#     ssh) are spawned in-process via npx (docker_isolation: none) — so this
+#     image ships node + the 6 npm packages pre-installed.
 #   - 5 remote servers (github, home-assistant, qnap, tavily, cloudflare-docs)
 #     are reached over the network at runtime — no image dependency.
 #
@@ -26,11 +26,12 @@ RUN curl -fsSL "https://github.com/smart-mcp-proxy/mcpproxy-go/releases/download
 # Pre-install the stdio MCP servers so mcpproxy's `npx` resolves them locally
 # (no runtime npm fetch when spawning tools).
 #   argocd-mcp            ArgoCD
+#   @azure-devops/mcp     Azure DevOps (bin: mcp-server-azuredevops), PAT auth
 #   @dopplerhq/mcp-server Doppler
 #   kubernetes-mcp-server Kubernetes (Go binary via npm optional dep)
 #   proxmox-mcp-server    Proxmox
 #   ssh-mcp               SSH
-RUN npm install -g argocd-mcp @dopplerhq/mcp-server kubernetes-mcp-server proxmox-mcp-server ssh-mcp
+RUN npm install -g argocd-mcp @azure-devops/mcp @dopplerhq/mcp-server kubernetes-mcp-server proxmox-mcp-server ssh-mcp
 
 # Config (ConfigMap mount) + writable data dir (activity log, telemetry id).
 ENV MCPPROXY_CONFIG=/etc/mcpproxy/mcp_config.json \

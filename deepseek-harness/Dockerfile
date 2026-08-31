@@ -15,7 +15,9 @@ RUN npm install -g @deepseek-ai/dsh@0.1.1-rc.2
 # Basic Linux debugging tools available to the model/user inside the
 # container: curl/wget (HTTP), net-tools (netstat), iproute2 (ip/ss),
 # iputils-ping (ping), dnsutils (dig/nslookup), procps (ps/top), less,
-# python3 (+ pip, venv) to run Python scripts, sshpass for password-auth SSH.
+# python3 (+ pip, venv) to run Python scripts, sshpass for password-auth SSH,
+# git + gh (GitHub CLI, official apt repo -- not in Debian's) for the
+# PVC-local repo clones (see repo-sync-configmap.yaml in argo-local).
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     wget \
@@ -29,6 +31,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     python3-pip \
     python3-venv \
     sshpass \
+    git \
+    ca-certificates \
+    && curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg -o /usr/share/keyrings/githubcli-archive-keyring.gpg \
+    && chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg \
+    && echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" > /etc/apt/sources.list.d/github-cli.list \
+    && apt-get update && apt-get install -y --no-install-recommends gh \
     && rm -rf /var/lib/apt/lists/*
 
 # DSH_HOME: harness home on the PVC. Telemetry: any non-empty value disables

@@ -12,6 +12,25 @@ FROM node:22-slim
 # Pin the version — the package is pre-release and floats.
 RUN npm install -g @deepseek-ai/dsh@0.1.1-rc.2
 
+# Basic Linux debugging tools available to the model/user inside the
+# container: curl/wget (HTTP), net-tools (netstat), iproute2 (ip/ss),
+# iputils-ping (ping), dnsutils (dig/nslookup), procps (ps/top), less,
+# python3 (+ pip, venv) to run Python scripts, sshpass for password-auth SSH.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    wget \
+    net-tools \
+    iproute2 \
+    iputils-ping \
+    dnsutils \
+    procps \
+    less \
+    python3 \
+    python3-pip \
+    python3-venv \
+    sshpass \
+    && rm -rf /var/lib/apt/lists/*
+
 # DSH_HOME: harness home on the PVC. Telemetry: any non-empty value disables
 # the OTel session-telemetry row (privacy switch prefers off-by-mistake).
 ENV DSH_HOME=/data/.dsh \

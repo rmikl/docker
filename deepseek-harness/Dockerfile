@@ -12,6 +12,14 @@ FROM node:22-slim
 # Pin the version — the package is pre-release and floats.
 RUN npm install -g @deepseek-ai/dsh@0.1.1-rc.2
 
+# git: node:22-slim ships without it. Needed for the PVC-local repo mirrors
+# (repo-sync-configmap.yaml) and for dsh's own self-update push path (see
+# git-hooks/pre-push, git-askpass.sh, and entrypoint.sh's git config).
+# ca-certificates: required for HTTPS git push/fetch to github.com.
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends git ca-certificates && \
+    rm -rf /var/lib/apt/lists/*
+
 # DSH_HOME: harness home on the PVC. Telemetry: any non-empty value disables
 # the OTel session-telemetry row (privacy switch prefers off-by-mistake).
 ENV DSH_HOME=/data/.dsh \
@@ -26,4 +34,17 @@ WORKDIR /workspace
 EXPOSE 3080
 
 COPY --chown=node:node entrypoint.sh /usr/local/bin/dsh-entrypoint
+COPY --chown=node:node git-hooks/pre-push /usr/local/lib/dsh-git-hooks/pre-push
+COPY --chown=node:node git-askpass.sh /usr/local/lib/dsh-git-askpass.sh
+# Explicit chmod rather than relying on the git-recorded file mode: files
+# added via the GitHub Contents API (as these were) land as 100644
+# regardless of local intent, silently dropping the execute bit that
+# ENTRYPOINT and git's pre-push hook both require to run at all. Making
+# this explicit means it can't regress the same way again no matter how a
+# future edit gets into the repo.
+USER root
+RUN chmod 0755 /usr/local/bin/dsh-entrypoint \
+                /usr/local/lib/dsh-git-hooks/pre-push \
+                /usr/local/lib/dsh-git-askpass.sh
+USER node
 ENTRYPOINT ["dsh-entrypoint"]

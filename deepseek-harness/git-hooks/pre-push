@@ -1,0 +1,53 @@
+#!/bin/sh
+# Tier A/B push routing for the dsh self-update loop -- see argo-local
+# apps/media/deepseek-harness/additional-k8s-objects/agents-md-configmap.yaml
+# ("Self-update" section) for the full rationale and runbook.
+#
+# Rejects a direct push to master that touches a Tier B path (dsh's own
+# image source, or its own deployment manifests in argo-local); those must
+# go through a branch + PR instead. Every other push (Tier A, or any push
+# to a non-master branch) goes straight through untouched.
+#
+# Installed via `git config --global core.hooksPath` in entrypoint.sh, so
+# it applies to every repo mirror under /workspace/repos, not just one.
+set -eu
+
+remote_url="$2"
+
+case "$remote_url" in
+  *rmikl/argo-local*)
+    tier_b_prefixes="apps/media/deepseek-harness/"
+    ;;
+  *rmikl/docker*)
+    tier_b_prefixes="deepseek-harness/ dsh-watchdog/"
+    ;;
+  *)
+    # No Tier B restriction defined for this remote -- allow.
+    exit 0
+    ;;
+esac
+
+reject=0
+while read -r local_ref local_sha remote_ref remote_sha; do
+  case "$remote_ref" in
+    refs/heads/master) ;;
+    *) continue ;;  # only master is guarded; branch pushes always allowed
+  esac
+
+  case "$remote_sha" in
+    0000000000000000000000000000000000000000) continue ;;  # new ref, nothing to diff
+  esac
+
+  changed=$(git diff --name-only "$remote_sha" "$local_sha" 2>/dev/null || echo "")
+  for prefix in $tier_b_prefixes; do
+    if echo "$changed" | grep -q "^${prefix}"; then
+      echo "REJECTED: push to master touches Tier B path '${prefix}*' (see AGENTS.md Self-update section). Push a branch and open a PR instead." >&2
+      reject=1
+    fi
+  done
+done
+
+if [ "$reject" -eq 1 ]; then
+  exit 1
+fi
+exit 0

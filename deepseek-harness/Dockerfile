@@ -36,4 +36,15 @@ EXPOSE 3080
 COPY --chown=node:node entrypoint.sh /usr/local/bin/dsh-entrypoint
 COPY --chown=node:node git-hooks/pre-push /usr/local/lib/dsh-git-hooks/pre-push
 COPY --chown=node:node git-askpass.sh /usr/local/lib/dsh-git-askpass.sh
+# Explicit chmod rather than relying on the git-recorded file mode: files
+# added via the GitHub Contents API (as these were) land as 100644
+# regardless of local intent, silently dropping the execute bit that
+# ENTRYPOINT and git's pre-push hook both require to run at all. Making
+# this explicit means it can't regress the same way again no matter how a
+# future edit gets into the repo.
+USER root
+RUN chmod 0755 /usr/local/bin/dsh-entrypoint \
+                /usr/local/lib/dsh-git-hooks/pre-push \
+                /usr/local/lib/dsh-git-askpass.sh
+USER node
 ENTRYPOINT ["dsh-entrypoint"]

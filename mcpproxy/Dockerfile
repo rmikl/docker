@@ -1,9 +1,10 @@
 # mcpproxy + all stdio MCP servers in a single image.
 #
-# mcpproxy (static Go binary) aggregates 10 MCP servers:
-#   - 5 stdio servers (argocd, doppler, kubernetes, proxmox, ssh) are spawned
-#     in-process via npx (docker_isolation: none) — so this image ships node
-#     + the 5 npm packages pre-installed.
+# mcpproxy (static Go binary) aggregates 13 MCP servers:
+#   - 8 stdio servers (argocd, azure-devops, doppler, grafana, kubernetes,
+#     prometheus, proxmox, ssh) are spawned in-process (docker_isolation:
+#     none) — so this image ships node + the npm packages, plus the
+#     mcp-grafana Go binary, pre-installed.
 #   - 5 remote servers (github, home-assistant, qnap, tavily, cloudflare-docs)
 #     are reached over the network at runtime — no image dependency.
 #
@@ -23,14 +24,37 @@ RUN curl -fsSL "https://github.com/smart-mcp-proxy/mcpproxy-go/releases/download
     rm /tmp/mcpproxy.tar.gz && \
     mcpproxy version
 
-# Pre-install the stdio MCP servers so mcpproxy's `npx` resolves them locally
+# Pre-install the stdio MCP servers so mcpproxy resolves them locally
 # (no runtime npm fetch when spawning tools).
 #   argocd-mcp            ArgoCD
+#   @azure-devops/mcp     Azure DevOps (bin: mcp-server-azuredevops), PAT auth
 #   @dopplerhq/mcp-server Doppler
 #   kubernetes-mcp-server Kubernetes (Go binary via npm optional dep)
+#   prometheus-mcp-server Prometheus (PromQL instant/range queries, metadata)
 #   proxmox-mcp-server    Proxmox
 #   ssh-mcp               SSH
-RUN npm install -g argocd-mcp @dopplerhq/mcp-server kubernetes-mcp-server proxmox-mcp-server ssh-mcp
+# NOTE: @azure-devops/mcp is also added by the open PR "mcpproxy: add
+# azure-devops MCP server" — it is included here because the currently
+# deployed image already ships it and the cluster ConfigMap references
+# mcp-server-azuredevops. Whichever lands second is a trivial conflict.
+RUN npm install -g \
+      argocd-mcp \
+      @azure-devops/mcp \
+      @dopplerhq/mcp-server \
+      kubernetes-mcp-server \
+      prometheus-mcp-server@1.0.1 \
+      proxmox-mcp-server \
+      ssh-mcp
+
+# mcp-grafana (Grafana's own MCP server) — a Go binary, not an npm package.
+# Taken from the upstream release rather than `uvx mcp-grafana`, which would
+# add a Python toolchain to this image just to unpack the same binary.
+# Pinned: the cluster's Grafana is 12.3.1 and tool coverage tracks releases.
+ARG MCP_GRAFANA_VERSION=1.3.0
+RUN curl -fsSL "https://github.com/grafana/mcp-grafana/releases/download/v${MCP_GRAFANA_VERSION}/mcp-grafana_Linux_x86_64.tar.gz" \
+      | tar -xz -C /usr/local/bin mcp-grafana && \
+    chmod 0755 /usr/local/bin/mcp-grafana && \
+    mcp-grafana --help >/dev/null
 
 # Config (ConfigMap mount) + writable data dir (activity log, telemetry id).
 ENV MCPPROXY_CONFIG=/etc/mcpproxy/mcp_config.json \

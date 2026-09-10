@@ -20,15 +20,24 @@ git config --global core.hooksPath /usr/local/lib/dsh-git-hooks
 git config --global credential.helper ""
 export GIT_ASKPASS=/usr/local/lib/dsh-git-askpass.sh
 
-# Launcher flags must precede the `web` subcommand: everything after it is
-# forwarded to the web app, so a --patch placed later is silently ignored.
-#
 # Space-separated list of cordis patch overlays (DSH_PATCH_FILES), each passed
-# as its own repeatable `--patch <path>`. Without this the mounted overlays are
-# inert: verified 2026-09-10 that `dump-config` showed 0 mcpproxy entries and no
-# subagent agentOptions until the flags were passed, i.e. the in-cluster MCP
-# gateway and the Spark subagent routing were both silently doing nothing while
-# the manifests looked correct.
+# as its own repeatable `--patch <path>`. Without these the mounted overlays
+# are inert: verified 2026-09-10 that `dump-config` showed 0 mcpproxy entries
+# and no subagent agentOptions until the flags were passed, i.e. the
+# in-cluster MCP gateway and the Spark subagent routing were both silently
+# doing nothing while the manifests looked correct.
+#
+# NOTE ON THE INVOCATION FORM. `--patch` is a LAUNCHER flag and cannot be
+# combined with the `web` SUBCOMMAND -- dsh rejects that outright:
+#
+#     error: web takes none of parent --profile, --patch, --dump-config,
+#            or --dump-default-config
+#
+# (image 1.0.763 shipped `dsh --patch ... web ...` and CrashLooped on exactly
+# this.) The two equivalent spellings are `dsh web <app args>` and
+# `dsh --profile web <app args>`; only the latter accepts --patch, so the
+# entrypoint always uses the --profile form. Everything after the profile
+# selection is forwarded to the web app.
 launcher=""
 for patch in ${DSH_PATCH_FILES:-}; do
   if [ -f "$patch" ]; then
@@ -38,11 +47,11 @@ for patch in ${DSH_PATCH_FILES:-}; do
   fi
 done
 
-args="web --no-open --port ${DSH_WEB_PORT:-3080}"
+args="--no-open --port ${DSH_WEB_PORT:-3080}"
 # Space-separated list of Host-header authorities accepted by the /api
 # browser-trust fence (e.g. "dsh.rmikl.pl").
 for host in ${DSH_TRUSTED_HOSTS:-}; do
   args="$args --trusted-host $host"
 done
 # shellcheck disable=SC2086
-exec dsh $launcher $args
+exec dsh --profile web $launcher $args
